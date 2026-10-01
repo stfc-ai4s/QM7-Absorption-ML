@@ -1,0 +1,30 @@
+{
+  "figure_3": [
+    481,
+    3935,
+    4170
+  ],
+  "figure_4": [
+    972,
+    481
+  ],
+  "molecules": [
+    {
+      "id": 481,
+      "smiles": "C#CC#CCOC"
+    },
+    {
+      "id": 3935,
+      "smiles": "CNC[C@@H](C)CO"
+    },
+    {
+      "id": 4170,
+      "smiles": "C=C(CC)NC=[N]"
+    },
+    {
+      "id": 972,
+      "smiles": "C#CC#CCCO"
+    }
+  ],
+  "provenance_note": "M481, M3935 and M4170 use the supplied Figure 3 labels. Figure 4 now assigns its other isomer label to M972 and reuses the same M481 label. Verify this mapping against the original molecule-ID/SMILES table before the paper release."
+}

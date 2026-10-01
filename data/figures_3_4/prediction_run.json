@@ -1,0 +1,14 @@
+{
+  "model_sha256": "6a086f46aa41d3ab45ea66bccff81c3f78c39ced0ac594518258fe7921577de3",
+  "model": "/home/ubuntu/projects/densitySpec/density_spec_npz_runs_900/exp_003/cnn_model_torchscript.pt",
+  "molecule_ids": [
+    481,
+    3935,
+    4170,
+    972
+  ],
+  "selected_bins": 900,
+  "reference_sigma_bins": 10.0,
+  "reference_column": 1,
+  "note": "Compare the generated values with the archived paper tables using the same checkpoint and preprocessing."
+}

@@ -1,0 +1,51 @@
+# --- Model weights -----------------------------------------------------------
+# Trained checkpoints are distributed through eData, not through this
+# repository. Keep them outside the checkout, or in a directory ignored here.
+*.pt
+*.pth
+*.ckpt
+weights/
+checkpoints/
+
+# --- Bulk dataset ------------------------------------------------------------
+# Electron-density cubes and the TDDFT spectra they pair with are distributed
+# through eData. Only the small derived tables needed for the figures are
+# committed. See docs/DATA.md for the expected placement.
+*.npz
+!data/figure_5/val_preds_true_raw.npz
+!data/figure_6/val_preds_true.npz
+data/figures_3_4/inputs/
+data/dataset/
+_cache_density_spec_shards/
+*_shard_*.npy
+
+# --- Run outputs -------------------------------------------------------------
+runs/
+density_spec_npz_runs*/
+graph_runs/
+mace_runs/
+mace_spectrum_sweep/
+
+# --- Local holding area ------------------------------------------------------
+# Files superseded by the reorganised documentation; safe to delete.
+.superseded/
+
+# --- Inference output --------------------------------------------------------
+# The predictor examples in docs/INFERENCE.md write here.
+predictions/
+
+# --- Python ------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+venv/
+*.egg-info/
+
+# --- OS / editor -------------------------------------------------------------
+.DS_Store
+*.swp
+
+# --- Secrets / local configuration -------------------------------------------
+.env
+.env.*
