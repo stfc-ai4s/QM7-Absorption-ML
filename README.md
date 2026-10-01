@@ -125,14 +125,11 @@ environment.yml pinned conda environment
 
 Copyright (c) 2026 stfc-ai4s.
 
-This work is licensed under a
-[Creative Commons Attribution 4.0 International Licence][cc-by] (CC BY 4.0);
-the full text is in [LICENSE](LICENSE). You may share and adapt the contents of
-this repository, including for commercial purposes, provided you give
-appropriate credit, link to the licence, and indicate whether changes were
-made.
+## Citation and license
+
+If you use this work, please cite the associated paper.
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
 If you use this code, the released weights or the dataset, please cite the
 accompanying paper and the records listed in [docs/DATA.md](docs/DATA.md).
-
-[cc-by]: https://creativecommons.org/licenses/by/4.0/
