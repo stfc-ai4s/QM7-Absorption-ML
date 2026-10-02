@@ -11,7 +11,7 @@ This repository holds the training code, the inference code, and everything
 needed to regenerate the paper figures. Trained model weights and the full
 electron-density dataset are too large to host here and are distributed
 separately: the weights on
-[eData](https://edata.stfc.ac.uk/items/2d60d176-fe1f-4f16-a59e-6487224230be),
+eData,
 the dataset on
 [PSDI Data Collections](https://data-collections.psdi.ac.uk/records/pk3n6-s4778).
 See [docs/DATA.md](docs/DATA.md).
