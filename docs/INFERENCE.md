@@ -18,7 +18,7 @@ not predict:
 
 `scripts/inference/spectrum_io.py` is shared by the three spectrum predictors
 and must stay beside them. Download the checkpoints from the
-[eData record](https://edata.stfc.ac.uk/items/2d60d176-fe1f-4f16-a59e-6487224230be)
+[eData record](https://doi.org/10.5286/edata/987)
 and keep them outside the checkout; see [DATA.md](DATA.md).
 
 The examples below write into `predictions/`, which is gitignored, so your own
