@@ -5,7 +5,7 @@ separate records:
 
 | What | Where |
 |---|---|
-| **Trained model weights** (`.pt` / `.pth`) | eData (STFC): <https://edata.stfc.ac.uk/items/2d60d176-fe1f-4f16-a59e-6487224230be> |
+| **Trained model weights** (`.pt` / `.pth`) | eData (STFC): <https://doi.org/10.5286/edata/987> |
 | **The electron-density and geometry dataset** — roughly 6 GB of density cubes, TDDFT reference spectra and geometries | PSDI Data Collections: <https://data-collections.psdi.ac.uk/records/pk3n6-s4778> |
 
 `.gitignore` excludes `*.pt`, `*.pth` and the dataset directories, so neither
