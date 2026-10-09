@@ -11,9 +11,6 @@ separate records:
 `.gitignore` excludes `*.pt`, `*.pth` and the dataset directories, so neither
 can be committed by accident.
 
-> **Before publishing:** add both records' DOIs here in place of
-> `<EDATA_DOI>` and `<PSDI_DOI>`, for the citation in the README.
-
 Nothing on either record is needed to redraw the paper figures — see
 [FIGURES.md](FIGURES.md). You need a download only to train a model, to run
 inference on a new molecule, or to regenerate the figure input tables from
