@@ -16,6 +16,7 @@ checkpoints/
 !data/figure_6/val_preds_true.npz
 data/figures_3_4/inputs/
 data/dataset/
+datasets/
 _cache_density_spec_shards/
 *_shard_*.npy
 

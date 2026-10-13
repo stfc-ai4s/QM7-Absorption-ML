@@ -57,7 +57,7 @@ dependencies:
   - zlib=1.2.13
   - pip
   - pip:
-      # torch 2.8.0+cu126 and torch-cluster's +pt28cu126 build are not on PyPI;
+      # torch 2.8.0+cu126 and the +pt28cu126 PyG extension builds are not on PyPI;
       # these two lines are what make the pinned versions resolvable.
       - --extra-index-url https://download.pytorch.org/whl/cu126
       - --find-links https://data.pyg.org/whl/torch-2.8.0+cu126.html
@@ -206,6 +206,8 @@ dependencies:
       - torch-cluster==1.6.3+pt28cu126
       - torch-ema==0.3
       - torch-geometric==2.6.1
+      - torch-scatter==2.1.2+pt28cu126
+      - torch-sparse==0.6.18+pt28cu126
       - torchaudio==2.8.0+cu126
       - torchmetrics==1.9.0
       - torchvision==0.23.0+cu126

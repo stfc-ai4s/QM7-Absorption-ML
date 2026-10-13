@@ -78,7 +78,7 @@ Needs the CNN checkpoint and the eight density/reference files listed in
 
 ```bash
 python scripts/analysis/generate_figures_3_4_data.py \
-    --model /your/scratch/qm7-spectra/weights/cnn_density_spectrum.pt
+    --model /your/scratch/qm7-spectra/weights/cnn_model_spectra.pt
 python scripts/plotting/make_figures_3_4_5.py
 ```
 
@@ -86,7 +86,7 @@ Or read the dataset directly instead of copying inputs in:
 
 ```bash
 python scripts/analysis/generate_figures_3_4_data.py \
-    --model /your/scratch/qm7-spectra/weights/cnn_density_spectrum.pt \
+    --model /your/scratch/qm7-spectra/weights/cnn_model_spectra.pt \
     --dataset-root /your/scratch/qm7-spectra/dataset
 ```
 
@@ -97,7 +97,7 @@ somewhere else and plot that directory:
 
 ```bash
 python scripts/analysis/generate_figures_3_4_data.py \
-    --model .../cnn_density_spectrum.pt --output-dir /tmp/new_tables
+    --model .../cnn_model_spectra.pt --output-dir /tmp/new_tables
 python scripts/plotting/make_figures_3_4_5.py --data-dir /tmp/new_tables --output-dir /tmp/new_figs
 ```
 
@@ -149,7 +149,7 @@ molecules the Figure 6/7 analysis uses — the normalization model is trained by
 
 ```bash
 python scripts/inference/predict_normconst_from_density.py validation \
-    --model   /your/scratch/qm7-spectra/weights/normconst_model.pt \
+    --model   /your/scratch/qm7-spectra/weights/cnn_model_normconst.pt \
     --config  /your/scratch/qm7-spectra/runs/normconst/config.json \
     --split   /your/scratch/qm7-spectra/runs/normconst/split.json \
     --targets /your/scratch/qm7-spectra/runs/normconst/targets_sum900.npz \

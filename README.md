@@ -37,8 +37,8 @@ python -c "import torch, numpy, matplotlib, rdkit; print(torch.__version__, torc
 
 **CUDA.** The pinned PyTorch is the CUDA 12.6 build, and `environment.yml`
 carries the two pip index lines needed to fetch it and the matching
-`torch-cluster` wheel. For a different CUDA version, or for CPU only, edit
-those two lines and the `torch*`, `torch-cluster` pins to match — see the
+`torch-cluster`, `torch-scatter` and `torch-sparse` wheels. For a different CUDA
+version, or for CPU only, edit those two lines and the `torch*` pins to match — see the
 [PyTorch](https://pytorch.org/get-started/locally/) and
 [PyG](https://data.pyg.org/whl/) wheel indexes.
 
@@ -50,6 +50,43 @@ practice; the other scripts will run on CPU, slowly.
 
 Installing the full environment anyway is the safest route to reproducing
 published numbers, since results can shift with library versions.
+
+### Troubleshooting older Linux systems
+
+On older distributions such as RHEL/Rocky 8 (check with `ldd --version`; these
+ship glibc 2.28), two things go wrong after `conda env create`.
+
+**cuDNN not found.** Any script that imports PyTorch Geometric aborts with
+`Unable to load any of {libcudnn_graph.so...}` and `Aborted (core dumped)`.
+Point the loader at the cuDNN that pip installed, saved into the environment
+so it applies on every activation:
+
+```bash
+conda env config vars set LD_LIBRARY_PATH=$CONDA_PREFIX/lib/python3.10/site-packages/nvidia/cudnn/lib
+conda deactivate && conda activate spectra-ml
+```
+
+Check the spelling of `$CONDA_PREFIX`: a typo silently expands to an empty
+path and the error stays the same. `ls $LD_LIBRARY_PATH` should list
+`libcudnn_graph.so.9`.
+
+**PyG extensions need glibc 2.32.** The prebuilt `torch-cluster`,
+`torch-scatter` and `torch-sparse` wheels fail with
+``version `GLIBC_2.32' not found``, which surfaces in SchNet/DimeNet++ as
+`'radius_graph' requires 'torch-cluster'`. Rebuild them from source. PyTorch
+2.8 needs GCC 9 or newer, which RHEL 8 provides as `gcc-toolset`:
+
+```bash
+source /opt/rh/gcc-toolset-14/enable
+CUDA_VISIBLE_DEVICES="" FORCE_CUDA=0 pip install --no-build-isolation \
+    --no-binary torch-cluster,torch-scatter,torch-sparse \
+    --force-reinstall --no-deps --no-cache-dir \
+    torch-cluster==1.6.3 torch-scatter==2.1.2 torch-sparse==0.6.18
+```
+
+This takes 10–20 minutes and builds CPU-only extensions (CUDA 12.6's `nvcc`
+rejects GCC 14), so run the SchNet/DimeNet++ predictor with `--device cpu`. The
+other predictors still use the GPU.
 
 ## Quick start: reproduce the figures
 
@@ -81,6 +118,7 @@ scripts/
   inference/    predict one spectrum from a density cube or an XYZ geometry
   analysis/     turn model outputs into the small tables the figures plot
   plotting/     draw the figures from those tables
+  convert_cubes_to_npz.py  turn the dataset's density cubes into the NPZ the scripts read
   reproduce_figures.sh
 data/
   figures_3_4/  the four CNN prediction tables behind Figures 3 and 4
@@ -110,7 +148,8 @@ environment.yml pinned conda environment
   separately — see
   [docs/TRAINING.md](docs/TRAINING.md#normalization-constant-density--scalar).
 - **Molecule identity.** Files are linked by the molecule id in their name:
-  `GEO_M<id>.xyz`, `density_M<id>.npz`, `tddft_spectrum_gamma_150meV_M<id>.dat`.
+  `GEO_M<id>.xyz`, `density_M<id>.cube` (converted to `density_M<id>.npz` by
+  `scripts/convert_cubes_to_npz.py`), `tddft_spectrum_gamma_150meV_M<id>.dat`.
 - **Molecule ordering.** The cache `index.json` produced by
   `scripts/training/build_density_spectrum_cache.py` fixes the ordering for
   every model family. Positions in that index are what the splits refer to.

@@ -21,68 +21,86 @@ needs only the weights.
 
 | File | Model | Used by |
 |---|---|---|
-| `cnn_density_spectrum.pt` | 3D CNN, density → spectrum | `predict_spectrum_from_density.py`, `generate_figures_3_4_data.py` |
-| `schnet_spectrum.pt` | SchNet, geometry → spectrum | `predict_spectrum_from_xyz_schnet.py` |
-| `dimenetpp_spectrum.pt` | DimeNet++, geometry → spectrum | `predict_spectrum_from_xyz_schnet.py` |
-| `mace_spectrum.pth` | MACE, geometry → spectrum | `predict_mace_spectrum.py` |
-| `normconst_model.pt` | 3D CNN, density → normalization constant | `predict_normconst_from_density.py` |
+| `cnn_model_spectra.pt` | 3D CNN, density → spectrum | `predict_spectrum_from_density.py`, `generate_figures_3_4_data.py` |
+| `schnet_model_spectra.pt` | SchNet, geometry → spectrum | `predict_spectrum_from_xyz_schnet.py` |
+| `dimnetpp_model_spectra.pt` | DimeNet++, geometry → spectrum | `predict_spectrum_from_xyz_schnet.py` |
+| `mace_model_spectra.pth` | MACE, geometry → spectrum | `predict_mace_spectrum.py` |
+| `cnn_model_normconst.pt` | 3D CNN, density → normalization constant | `predict_normconst_from_density.py` |
 
-`normconst_model.pt` is a TorchScript export. The predictor also accepts the
+These are the file names on the eData record. Note the spelling `dimnetpp`.
+
+`cnn_model_normconst.pt` is a TorchScript export. The predictor also accepts the
 raw `best_model.pth` state dict, but either way it needs the run's
 `config.json` beside it — that file carries the target transform and the
 standardization constants without which the output is in arbitrary units.
 Keep `config.json`, `split.json` and `targets_sum900.npz` together with the
 checkpoint.
+If your eData download has no such `config.json`, the normalization-constant
+predictor cannot be used; the four spectrum models do not need it.
 
 The CNN checkpoint behind Figures 3 and 4 is the `exp_003` model of the
-900-bin CNN sweep. `data/figures_3_4/prediction_run.json` records its SHA-256,
-so you can confirm you have the same file:
-
-```bash
-sha256sum /path/to/weights/cnn_density_spectrum.pt
-python -c "import json;print(json.load(open('data/figures_3_4/prediction_run.json'))['model_sha256'])"
-```
+900-bin CNN sweep.
 
 Checkpoint formats accepted by the predictors are described in
 [INFERENCE.md](INFERENCE.md#checkpoint-formats).
 
 ## Dataset
 
-From the PSDI Data Collections record. One directory per QM7 molecule id,
-holding up to three files:
+From the PSDI Data Collections record. One directory per QM7 molecule id:
 
 ```text
 <id>/
-  density_M<id>.npz                          ground-state electron density
-  tddft_spectrum_gamma_150meV_M<id>.dat      TDDFT reference spectrum
+  density_M<id>.cube                         ground-state electron density (Gaussian cube)
+  elf_M<id>.cube                             electron localization function (not used)
   GEO_M<id>.xyz                              Cartesian geometry
+  tddft_spectrum_gamma_150meV_M<id>.dat      TDDFT reference spectrum — the training target
+  tddft_spectrum_gamma_{50,500}meV_M<id>.dat same spectrum at other broadenings
+  ks_spectrum_gamma_{50,150,500}meV_M<id>.dat Kohn–Sham spectra (not used)
+  tddft_spectrum_list_<id>.dat               excitation list
 ```
 
-The density NPZ stores the volume under the key `data`, with shape
-`(nx, ny, nz)` or `(nx, ny, nz, 1)`. The spectrum `.dat` holds an energy column
-in atomic units followed by an intensity column.
+Every model here was trained on the **150 meV TDDFT** spectra. A spectrum
+`.dat` has an energy column in atomic units followed by `<xx> <yy> <zz> <f>`
+columns.
+
+### Convert the density cubes once
+
+The density predictors and the cache builder read `density_M<id>.npz`, not the
+cube. Convert every cube in the dataset in place (each NPZ is written beside
+its cube; about 4 MB per molecule):
+
+```bash
+python scripts/convert_cubes_to_npz.py /your/scratch/qm7-spectra/dataset
+```
+
+The NPZ stores the volume under the key `data` as an `(nx, ny, nz)` float32
+array in cube order. Already-converted molecules are skipped, so the command
+can be re-run after a partial download.
 
 ## Where to put the download
 
 Keep both downloads **outside the repository checkout**. Every script takes
 the location as a command-line argument, so no path is hard-coded and nothing
-large can drift into git. The two records unpack side by side; a layout that
-works with all the default templates:
+large can drift into git. (`weights/` and `datasets/` inside the checkout are
+also gitignored, if you prefer to keep them there.) The two records unpack side
+by side; a layout that works with all the default templates:
 
 ```text
 /your/scratch/qm7-spectra/
   weights/                                   from the eData record
-    cnn_density_spectrum.pt
-    schnet_spectrum.pt
-    dimenetpp_spectrum.pt
-    mace_spectrum.pth
-    normconst_model.pt
-    normconst_config.json                    keep beside normconst_model.pt
+    cnn_model_spectra.pt
+    schnet_model_spectra.pt
+    dimnetpp_model_spectra.pt
+    mace_model_spectra.pth
+    cnn_model_normconst.pt
+    normconst_config.json                    keep beside cnn_model_normconst.pt
   dataset/                                   from the PSDI record
     1/
-      density_M1.npz
+      density_M1.cube
+      density_M1.npz                         written by convert_cubes_to_npz.py
       tddft_spectrum_gamma_150meV_M1.dat
       GEO_M1.xyz
+      ...
     2/
       ...
   cache/                                     created by the cache builder

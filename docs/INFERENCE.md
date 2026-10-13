@@ -55,9 +55,18 @@ same target:
 
 ## Predict from an electron density
 
+The dataset ships densities as `.cube` files; convert them to NPZ once first
+(see [DATA.md](DATA.md#convert-the-density-cubes-once)):
+
+```bash
+python scripts/convert_cubes_to_npz.py /your/scratch/qm7-spectra/dataset
+```
+
+Then:
+
 ```bash
 python scripts/inference/predict_spectrum_from_density.py \
-    --model /your/scratch/qm7-spectra/weights/cnn_density_spectrum.pt \
+    --model /your/scratch/qm7-spectra/weights/cnn_model_spectra.pt \
     --npz  /your/scratch/qm7-spectra/dataset/1/density_M1.npz \
     --ref  /your/scratch/qm7-spectra/dataset/1/tddft_spectrum_gamma_150meV_M1.dat \
     --outdir predictions/density_M1
@@ -86,11 +95,25 @@ These defaults reproduce the committed Figure 3/4 tables.
 
 ```bash
 python scripts/inference/predict_spectrum_from_xyz_schnet.py \
-    --model /your/scratch/qm7-spectra/weights/schnet_spectrum.pt \
+    --model /your/scratch/qm7-spectra/weights/schnet_model_spectra.pt \
     --xyz   /your/scratch/qm7-spectra/dataset/1/GEO_M1.xyz \
     --reference /your/scratch/qm7-spectra/dataset/1/tddft_spectrum_gamma_150meV_M1.dat \
     --outdir predictions/schnet_M1
 ```
+
+DimeNet++ uses the same script; only the checkpoint changes:
+
+```bash
+python scripts/inference/predict_spectrum_from_xyz_schnet.py \
+    --model /your/scratch/qm7-spectra/weights/dimnetpp_model_spectra.pt \
+    --xyz   /your/scratch/qm7-spectra/dataset/1/GEO_M1.xyz \
+    --reference /your/scratch/qm7-spectra/dataset/1/tddft_spectrum_gamma_150meV_M1.dat \
+    --outdir predictions/dimnetpp_M1
+```
+
+This script takes `--model`, not `--weights`. It runs on the GPU when one is
+visible; add `--device cpu` if you built the PyG extensions CPU-only (see
+[Environment](#environment) below). One molecule takes seconds on CPU.
 
 Writes the table, a metadata JSON and a quick PNG (`--no-plot` to skip it).
 The reference is optional; without it, pass `--energy-grid` or
@@ -102,7 +125,7 @@ models were trained and evaluated with.
 
 ```bash
 python scripts/inference/predict_mace_spectrum.py \
-    --weights /your/scratch/qm7-spectra/weights/mace_spectrum.pth \
+    --weights /your/scratch/qm7-spectra/weights/mace_model_spectra.pth \
     --xyz     /your/scratch/qm7-spectra/dataset/1/GEO_M1.xyz \
     --reference /your/scratch/qm7-spectra/dataset/1/tddft_spectrum_gamma_150meV_M1.dat \
     --outdir predictions/mace_M1
@@ -127,7 +150,7 @@ that missing scale — the sum of the first 900 points of the reference spectrum
 
 ```bash
 python scripts/inference/predict_normconst_from_density.py density \
-    --model   /your/scratch/qm7-spectra/weights/normconst_model.pt \
+    --model   /your/scratch/qm7-spectra/weights/cnn_model_normconst.pt \
     --config  /your/scratch/qm7-spectra/weights/normconst_config.json \
     --density /your/scratch/qm7-spectra/dataset/1/density_M1.npz
 ```
@@ -152,7 +175,7 @@ where the densities are already prepared:
 
 ```bash
 python scripts/inference/predict_normconst_from_density.py validation \
-    --model   /your/scratch/qm7-spectra/weights/normconst_model.pt \
+    --model   /your/scratch/qm7-spectra/weights/cnn_model_normconst.pt \
     --config  /your/scratch/qm7-spectra/runs/normconst/config.json \
     --split   /your/scratch/qm7-spectra/runs/normconst/split.json \
     --targets /your/scratch/qm7-spectra/runs/normconst/targets_sum900.npz \
@@ -179,7 +202,7 @@ checkpoint bundle. **MACE** takes a `best_model.pth` state dict; the script
 matches the architecture against the checkpoint's tensor shapes.
 
 **Normalization-constant CNN** accepts a TorchScript export
-(`normconst_model.pt`) or the plain `best_model.pth` state dict. For a state
+(`cnn_model_normconst.pt`) or the plain `best_model.pth` state dict. For a state
 dict the architecture is rebuilt from the `arch` and `cube_shape` entries of
 `config.json`, never from defaults.
 
@@ -193,3 +216,15 @@ SciPy. SchNet/DimeNet++ inference needs PyTorch Geometric; MACE inference needs
 `mace-torch` and e3nn. `environment.yml` pins a single environment with all of
 them. Use the versions the model was trained with — `environment.yml` is that
 environment.
+
+DimeNet++ additionally needs `torch-scatter` and `torch-sparse`; SchNet and
+DimeNet++ both need `torch-cluster`. All three are pinned in `environment.yml`.
+
+Two failures are common on older Linux systems such as RHEL/Rocky 8; the
+[README](../README.md#troubleshooting-older-linux-systems) gives the fixes:
+
+- `Unable to load any of {libcudnn_graph.so...}` then `Aborted (core dumped)`:
+  PyTorch cannot find cuDNN. Set `LD_LIBRARY_PATH` as described there.
+- `GLIBC_2.32' not found (required by .../torch_cluster/...)`, or
+  `'radius_graph' requires 'torch-cluster'`: the prebuilt PyG wheels need a newer
+  glibc. Rebuild them from source as described there.
