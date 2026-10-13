@@ -32,8 +32,8 @@ Recompute validation predictions:
     python scripts/inference/predict_normconst_from_density.py validation \
         --model   /your/scratch/qm7-spectra/weights/cnn_model_normconst.pt \
         --config  configs/normconst_config.json \
-        --split   /your/scratch/qm7-spectra/runs/normconst/split.json \
-        --targets /your/scratch/qm7-spectra/runs/normconst/targets_sum900.npz \
+        --split   configs/normconst_split.json \
+        --targets configs/normconst_targets_sum900.npz \
         --output  /tmp/val_preds_true_raw.npz
 
 Predict one density:

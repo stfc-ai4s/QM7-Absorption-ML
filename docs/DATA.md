@@ -34,7 +34,10 @@ raw `best_model.pth` state dict, but either way it needs the training run's
 `config.json`, which carries the target transform and the standardization
 constants without which the output is in arbitrary units. That file is small,
 so it is committed here as `configs/normconst_config.json` rather than shipped
-with the weights.
+with the weights, together with the run's train/validation split
+(`configs/normconst_split.json`) and its targets
+(`configs/normconst_targets_sum900.npz`), which the predictor's `validation`
+mode uses to regenerate Figure 5.
 
 The CNN checkpoint behind Figures 3 and 4 is the `exp_003` model of the
 900-bin CNN sweep.

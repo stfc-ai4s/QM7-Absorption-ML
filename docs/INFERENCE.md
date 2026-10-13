@@ -179,10 +179,16 @@ where the densities are already prepared:
 python scripts/inference/predict_normconst_from_density.py validation \
     --model   /your/scratch/qm7-spectra/weights/cnn_model_normconst.pt \
     --config  configs/normconst_config.json \
-    --split   /your/scratch/qm7-spectra/runs/normconst/split.json \
-    --targets /your/scratch/qm7-spectra/runs/normconst/targets_sum900.npz \
+    --split   configs/normconst_split.json \
+    --targets configs/normconst_targets_sum900.npz \
     --output  /tmp/val_preds_true_raw.npz
 ```
+
+The config, split and targets in `configs/` all come from the training run of
+the released checkpoint, so this needs only the weights and the density cache
+from the cache builder. The cache location defaults to the `cache_index` in the
+config (`/your/scratch/qm7-spectra/cache/index.json`); pass `--cache-index` if
+yours is elsewhere.
 
 It prints MAE, RMSE and Pearson correlation in raw units and writes `pred`,
 `true` and `val_ds_idx`. That file is exactly what Figure 5 plots, so it can
