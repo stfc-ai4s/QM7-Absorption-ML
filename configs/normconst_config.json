@@ -1,0 +1,41 @@
+{
+  "created_utc": "2026-08-11T16:43:57.059142Z",
+  "cache_index": "/your/scratch/qm7-spectra/cache/index.json",
+  "run_dir": "density_normconst_runs/exp_sum900_v3",
+  "target": {
+    "type": "sum_first_900_points",
+    "clip_negative": true,
+    "transform": "none",
+    "standardize": true,
+    "y_mean": 6850.90001310334,
+    "y_std": 1090.9128847706706
+  },
+  "cube_shape": [
+    1,
+    155,
+    147,
+    143
+  ],
+  "arch": {
+    "num_layers": 7,
+    "kernel_size": 15,
+    "base_filters": 8,
+    "dropout_p": 0.2,
+    "out_features": 1
+  },
+  "train": {
+    "seed": 0,
+    "val_frac": 0.15,
+    "epochs": 200,
+    "batch_size": 16,
+    "lr": 5e-05,
+    "weight_decay": 1e-06,
+    "loss": "l1"
+  },
+  "counts": {
+    "valid": 6874,
+    "train": 5843,
+    "val": 1031
+  },
+  "targets_file": "density_normconst_runs/exp_sum900_v3/targets_sum900.npz"
+}

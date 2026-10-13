@@ -125,6 +125,7 @@ data/
   figure_5/     validation normalisation constants behind Figure 5
   figure_6/     validation predictions and molecule metadata for Figures 6 and 7
   plotting/     the chemistry summary CSV that Figures 6 and 7 plot
+configs/        normconst_config.json for the released normalization-constant model
 figures/        the published PNGs and the example-metrics CSV
 docs/           documentation
 environment.yml pinned conda environment

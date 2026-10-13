@@ -30,13 +30,11 @@ needs only the weights.
 These are the file names on the eData record. Note the spelling `dimnetpp`.
 
 `cnn_model_normconst.pt` is a TorchScript export. The predictor also accepts the
-raw `best_model.pth` state dict, but either way it needs the run's
-`config.json` beside it — that file carries the target transform and the
-standardization constants without which the output is in arbitrary units.
-Keep `config.json`, `split.json` and `targets_sum900.npz` together with the
-checkpoint.
-If your eData download has no such `config.json`, the normalization-constant
-predictor cannot be used; the four spectrum models do not need it.
+raw `best_model.pth` state dict, but either way it needs the training run's
+`config.json`, which carries the target transform and the standardization
+constants without which the output is in arbitrary units. That file is small,
+so it is committed here as `configs/normconst_config.json` rather than shipped
+with the weights.
 
 The CNN checkpoint behind Figures 3 and 4 is the `exp_003` model of the
 900-bin CNN sweep.
@@ -93,7 +91,6 @@ by side; a layout that works with all the default templates:
     dimnetpp_model_spectra.pt
     mace_model_spectra.pth
     cnn_model_normconst.pt
-    normconst_config.json                    keep beside cnn_model_normconst.pt
   dataset/                                   from the PSDI record
     1/
       density_M1.cube

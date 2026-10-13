@@ -30,8 +30,8 @@ Examples
 Recompute validation predictions:
 
     python scripts/inference/predict_normconst_from_density.py validation \
-        --model   /your/scratch/qm7-spectra/weights/normconst_model.pt \
-        --config  /your/scratch/qm7-spectra/runs/normconst/config.json \
+        --model   /your/scratch/qm7-spectra/weights/cnn_model_normconst.pt \
+        --config  configs/normconst_config.json \
         --split   /your/scratch/qm7-spectra/runs/normconst/split.json \
         --targets /your/scratch/qm7-spectra/runs/normconst/targets_sum900.npz \
         --output  /tmp/val_preds_true_raw.npz
@@ -39,17 +39,18 @@ Recompute validation predictions:
 Predict one density:
 
     python scripts/inference/predict_normconst_from_density.py density \
-        --model  /your/scratch/qm7-spectra/weights/normconst_model.pt \
-        --config /your/scratch/qm7-spectra/runs/normconst/config.json \
+        --model  /your/scratch/qm7-spectra/weights/cnn_model_normconst.pt \
+        --config configs/normconst_config.json \
         --density /your/scratch/qm7-spectra/dataset/1/density_M1.npz
 
 For an .npz holding several arrays, name the one to use with `--key`.
 
 Note on preprocessing: the `validation` mode reads densities straight out of
-the cache shards, so they are already normalized and centred. A density passed
-to `density` mode must be prepared the same way the cache builder prepares one
-— divided by its maximum absolute amplitude and centre-of-mass aligned onto
-the cube shape in `config.json`.
+the cache shards, so they are already normalized and centred. In `density`
+mode a raw 3-D density (e.g. from `scripts/convert_cubes_to_npz.py`) is
+prepared the same way the cache builder prepares one — divided by its maximum
+absolute amplitude and centre-of-mass aligned onto the cube shape in
+`config.json`. A density that already has that shape is used as given.
 """
 
 import argparse
@@ -65,6 +66,10 @@ from torch.utils.data import Dataset, DataLoader
 # keeping a second copy that could drift out of step.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "training"))
 from train_density_normconst_from_cache import CNNRegressor  # noqa: E402
+
+# Raw densities get the same rescale-and-recentre as the spectrum CNN predictor.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from predict_spectrum_from_density import centre_of_mass, paste_with_aligned_centre  # noqa: E402
 
 
 def inverse_target(values, config):
@@ -193,18 +198,32 @@ def load_density(path, key=None):
     return np.asarray(x)
 
 
+def preprocess_raw_density(volume, grid_shape):
+    """Prepare a raw density as the cache builder does: divide by the maximum
+    absolute amplitude, then paste it centre-of-mass aligned onto grid_shape."""
+    volume = np.asarray(volume, dtype=np.float32)
+    max_abs_value = float(np.max(np.abs(volume)))
+    if max_abs_value > 0.0:
+        volume = volume / max_abs_value
+    centred = np.zeros(tuple(grid_shape), dtype=np.float32)
+    paste_with_aligned_centre(centred, volume, source_centre=centre_of_mass(volume))
+    return centred
+
+
 def prepare_single_density(x, cube_shape):
     """
     Convert one density to model input shape (1, C, X, Y, Z).
 
     Accepted input shapes:
-      (X, Y, Z)
-      (C, X, Y, Z)
-      (1, C, X, Y, Z)
+      (X, Y, Z)        raw densities of any other size are preprocessed first
+      (C, X, Y, Z)     must already match cube_shape
+      (1, C, X, Y, Z)  must already match cube_shape
     """
     x = np.asarray(x)
 
     if x.ndim == 3 and cube_shape[0] == 1:
+        if tuple(x.shape) != tuple(cube_shape[1:]):
+            x = preprocess_raw_density(x, cube_shape[1:])
         x = x[None, ...]  # -> (C,X,Y,Z)
 
     if x.ndim == 4:

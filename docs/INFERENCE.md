@@ -151,7 +151,7 @@ that missing scale — the sum of the first 900 points of the reference spectrum
 ```bash
 python scripts/inference/predict_normconst_from_density.py density \
     --model   /your/scratch/qm7-spectra/weights/cnn_model_normconst.pt \
-    --config  /your/scratch/qm7-spectra/weights/normconst_config.json \
+    --config  configs/normconst_config.json \
     --density /your/scratch/qm7-spectra/dataset/1/density_M1.npz
 ```
 
@@ -159,16 +159,18 @@ Multiply a unit-sum predicted spectrum by the printed constant to get an
 absolute one. `--output result.npz` saves it instead of only printing it.
 
 **`--config` is not optional.** The model was trained on a standardized
-target, so `config.json` — written by the training run — is what converts the
-raw output back into spectrum-sum units. Without the matching config the
-number is meaningless.
+target, so the training run's `config.json` is what converts the raw output
+back into spectrum-sum units. The config for the released
+`cnn_model_normconst.pt` is committed as `configs/normconst_config.json`; use
+it unchanged with that checkpoint. A model you train yourself needs its own
+run's `config.json` instead.
 
-**Preprocessing is your responsibility in this mode.** The density must be
-prepared exactly as the cache builder prepares one: divided by its maximum
-absolute amplitude, then centre-of-mass aligned onto the `cube_shape` recorded
-in `config.json`. Shapes `(X,Y,Z)`, `(C,X,Y,Z)` and `(1,C,X,Y,Z)` are all
-accepted, but a mismatch against `cube_shape` is an error rather than a
-silent resize.
+Preprocessing is done for you: a raw 3-D density, such as one written by
+`scripts/convert_cubes_to_npz.py`, is divided by its maximum absolute amplitude
+and centre-of-mass aligned onto the `cube_shape` in the config, exactly as the
+cache builder prepares training densities. An `(X,Y,Z)` array already of that
+shape is used as given; `(C,X,Y,Z)` and `(1,C,X,Y,Z)` inputs must already
+match `cube_shape`.
 
 The second mode scores a whole validation set straight from the cache shards,
 where the densities are already prepared:
@@ -176,7 +178,7 @@ where the densities are already prepared:
 ```bash
 python scripts/inference/predict_normconst_from_density.py validation \
     --model   /your/scratch/qm7-spectra/weights/cnn_model_normconst.pt \
-    --config  /your/scratch/qm7-spectra/runs/normconst/config.json \
+    --config  configs/normconst_config.json \
     --split   /your/scratch/qm7-spectra/runs/normconst/split.json \
     --targets /your/scratch/qm7-spectra/runs/normconst/targets_sum900.npz \
     --output  /tmp/val_preds_true_raw.npz
