@@ -6,9 +6,10 @@ Physics in brief
 ----------------
 The input is an XYZ geometry: atomic numbers and Cartesian coordinates define the
 molecular structure. The model is an equivariant MACE message-passing network
-that converts this structure into learned atomic features. Only the rotationally
-invariant scalar channels are pooled to a molecular representation, then a small
-neural-network head predicts a normalized absorption spectrum on a fixed grid.
+that converts this structure into learned atomic features. The rotationally
+invariant parts of those features (scalar channels and vector-channel norms) are
+mean-pooled to a molecular representation, then a small neural-network head
+predicts a normalized absorption spectrum on a fixed grid.
 
 The output spectrum is a probability-like discretized spectrum: the predicted
 intensities are non-negative and sum to one because the final layer is Softmax.
@@ -69,7 +70,6 @@ from e3nn import o3
 from mace import modules
 from mace.data.atomic_data import AtomicData
 from mace.data.utils import Configuration
-from mace.modules.utils import extract_invariant
 from mace.tools import AtomicNumberTable, torch_geometric
 from mace.tools.scatter import scatter_mean
 
@@ -250,6 +250,28 @@ def build_atomic_data(
 # -----------------------------
 # Model
 # -----------------------------
+def irrep_invariants(node_feats: torch.Tensor, hidden_irreps: o3.Irreps) -> torch.Tensor:
+    """
+    Invariant per-atom features, exactly as IrrepInvariantProjector builds them in
+    train_mace_spectrum_sweep_from_cache.py, which produced the released weights.
+
+    Only the leading hidden_irreps block of node_feats (the first interaction's
+    output) is read. Scalar channels are kept as they are; each l > 0 channel is
+    replaced by its vector norm. MACE's extract_invariant gives a feature vector of
+    the same length but different content, so the head would load without error
+    and still predict nonsense.
+    """
+    irreps = o3.Irreps(hidden_irreps).remove_zero_multiplicities().simplify()
+    parts: List[torch.Tensor] = []
+    for (mul, irrep), feature_slice in zip(irreps, irreps.slices()):
+        block = node_feats[:, feature_slice].reshape(node_feats.shape[0], mul, irrep.dim)
+        if irrep.l == 0:
+            parts.append(block.reshape(node_feats.shape[0], mul))
+        else:
+            parts.append(torch.linalg.norm(block, dim=-1))
+    return torch.cat(parts, dim=-1)
+
+
 class MACEExp01Spectrum(nn.Module):
     """
     MACE spectrum architecture with module names matching the saved checkpoint.
@@ -289,8 +311,6 @@ class MACEExp01Spectrum(nn.Module):
 
         self.hidden_irreps = o3.Irreps(hidden_irreps)
         self.num_interactions = int(num_interactions)
-        self.max_L = self.hidden_irreps.lmax
-        self.num_scalar_channels = self.hidden_irreps.count(o3.Irrep(0, 1))
 
         atomic_energies = np.zeros((len(z_table),), dtype=np.float64)
 
@@ -323,7 +343,8 @@ class MACEExp01Spectrum(nn.Module):
             use_agnostic_product=use_agnostic_product,
         )
 
-        invariant_dim = self.num_scalar_channels * self.num_interactions
+        # One invariant per irrep multiplicity, matching irrep_invariants().
+        invariant_dim = self.hidden_irreps.remove_zero_multiplicities().simplify().num_irreps
         self.head = nn.Sequential(
             nn.Linear(invariant_dim, head_hidden),
             nn.ReLU(inplace=True),
@@ -345,12 +366,7 @@ class MACEExp01Spectrum(nn.Module):
         )
 
         node_feats = out["node_feats"]
-        node_invariants = extract_invariant(
-            node_feats,
-            num_layers=self.num_interactions,
-            num_features=self.num_scalar_channels,
-            l_max=self.max_L,
-        )
+        node_invariants = irrep_invariants(node_feats, self.hidden_irreps)
 
         graph_embedding = scatter_mean(
             src=node_invariants,
